@@ -1,0 +1,50 @@
+{
+  "trade_id": "",
+  "timestamp": "",
+  "symbol": "",
+  "side": "",
+  "type": "",
+  "amount": 0.0,
+  "price": 0.0,
+  "value": 0.0,
+  "leverage": 1.0,
+  "strategy": "",
+  "entry_signal": {
+    "type": "",
+    "confidence": 0.0,
+    "indicators": {},
+    "ai_prediction": 0.0
+  },
+  "risk_management": {
+    "stop_loss": 0.0,
+    "take_profit": 0.0,
+    "position_size": 0.0,
+    "risk_percentage": 0.0
+  },
+  "execution": {
+    "order_id": "",
+    "fill_price": 0.0,
+    "fill_amount": 0.0,
+    "fees": 0.0,
+    "slippage": 0.0,
+    "execution_time": 0.0
+  },
+  "performance": {
+    "pnl": 0.0,
+    "pnl_percentage": 0.0,
+    "duration": 0,
+    "outcome": ""
+  },
+  "market_conditions": {
+    "volatility": 0.0,
+    "volume": 0.0,
+    "trend": "",
+    "support_resistance": []
+  },
+  "metadata": {
+    "session_id": "",
+    "model_version": "",
+    "config_hash": "",
+    "notes": ""
+  }
+} 

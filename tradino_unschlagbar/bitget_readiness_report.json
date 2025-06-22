@@ -1,0 +1,133 @@
+{
+  "timestamp": "2025-06-22T17:13:01.467278",
+  "overall_status": "NOT_READY",
+  "checks": {
+    "🔧 Environment Setup": {
+      "status": "FAIL",
+      "message": "Fehlende Environment Variables: BITGET_API_KEY, BITGET_SECRET_KEY, BITGET_PASSPHRASE, BITGET_SANDBOX",
+      "details": {
+        "missing_vars": [
+          "BITGET_API_KEY",
+          "BITGET_SECRET_KEY",
+          "BITGET_PASSPHRASE",
+          "BITGET_SANDBOX"
+        ]
+      }
+    },
+    "🔑 API Credentials": {
+      "status": "FAIL",
+      "message": "Unvollständige API Credentials",
+      "details": {}
+    },
+    "🌐 Bitget Connection": {
+      "status": "PASS",
+      "message": "Bitget Demo API verbunden - 42 Markets verfügbar",
+      "details": {
+        "markets_count": 42,
+        "server_time_diff_ms": 128.862548828125,
+        "exchange_id": "bitget"
+      }
+    },
+    "💰 Demo Account Balance": {
+      "status": "FAIL",
+      "message": "Balance Check fehlgeschlagen: bitget requires \"apiKey\" credential",
+      "details": {
+        "error": "bitget requires \"apiKey\" credential"
+      }
+    },
+    "📊 Market Data Access": {
+      "status": "FAIL",
+      "message": "Market Data Access fehlgeschlagen: bitget {\"code\":\"40404\",\"msg\":\"Request URL NOT FOUND\",\"requestTime\":1750612385311,\"data\":null}",
+      "details": {
+        "error": "bitget {\"code\":\"40404\",\"msg\":\"Request URL NOT FOUND\",\"requestTime\":1750612385311,\"data\":null}"
+      }
+    },
+    "🎯 Order Management": {
+      "status": "PASS",
+      "message": "Order Management bereit - Parameter validiert",
+      "details": {
+        "market_info": {
+          "min_amount": 0.0,
+          "min_cost": 1.0,
+          "price_precision": 0.01,
+          "amount_precision": 1e-06
+        },
+        "test_order_valid": true
+      }
+    },
+    "📈 Position Management": {
+      "status": "FAIL",
+      "message": "Position Management Check fehlgeschlagen: bitget requires \"apiKey\" credential",
+      "details": {
+        "error": "bitget requires \"apiKey\" credential"
+      }
+    },
+    "🛡️ Risk Management": {
+      "status": "WARNING",
+      "message": "Risk Management Konfiguration: Risk per Trade problematisch: 0.0%, Max Daily Drawdown problematisch: 0.0%, Max Positions problematisch: 0",
+      "details": {
+        "risk_per_trade": 0,
+        "max_daily_drawdown": 0,
+        "max_positions": 0,
+        "issues": [
+          "Risk per Trade problematisch: 0.0%",
+          "Max Daily Drawdown problematisch: 0.0%",
+          "Max Positions problematisch: 0"
+        ]
+      }
+    },
+    "🤖 Trading Engine": {
+      "status": "FAIL",
+      "message": "Trading Engine Datei nicht gefunden",
+      "details": {
+        "path": "tradino_unschlagbar/core/trading_engine.py"
+      }
+    },
+    "📱 Telegram Integration": {
+      "status": "WARNING",
+      "message": "Telegram nicht konfiguriert (optional)",
+      "details": {
+        "bot_token_present": false,
+        "chat_id_present": false
+      }
+    },
+    "⚡ Performance Check": {
+      "status": "PASS",
+      "message": "API Performance exzellent: 322ms",
+      "details": {
+        "api_response_time_ms": 321.8214511871338,
+        "performance_rating": "Excellent"
+      }
+    },
+    "🔄 Live Trading Simulation": {
+      "status": "FAIL",
+      "message": "Live Trading Simulation fehlgeschlagen: bitget requires \"apiKey\" credential",
+      "details": {
+        "error": "bitget requires \"apiKey\" credential"
+      }
+    }
+  },
+  "warnings": [
+    "🛡️ Risk Management: Risk Management Konfiguration: Risk per Trade problematisch: 0.0%, Max Daily Drawdown problematisch: 0.0%, Max Positions problematisch: 0",
+    "📱 Telegram Integration: Telegram nicht konfiguriert (optional)"
+  ],
+  "errors": [
+    "🔧 Environment Setup: Fehlende Environment Variables: BITGET_API_KEY, BITGET_SECRET_KEY, BITGET_PASSPHRASE, BITGET_SANDBOX",
+    "🔑 API Credentials: Unvollständige API Credentials",
+    "💰 Demo Account Balance: Balance Check fehlgeschlagen: bitget requires \"apiKey\" credential",
+    "📊 Market Data Access: Market Data Access fehlgeschlagen: bitget {\"code\":\"40404\",\"msg\":\"Request URL NOT FOUND\",\"requestTime\":1750612385311,\"data\":null}",
+    "📈 Position Management: Position Management Check fehlgeschlagen: bitget requires \"apiKey\" credential",
+    "🤖 Trading Engine: Trading Engine Datei nicht gefunden",
+    "🔄 Live Trading Simulation: Live Trading Simulation fehlgeschlagen: bitget requires \"apiKey\" credential"
+  ],
+  "recommendations": [
+    "Beheben Sie die API-Verbindungsprobleme vor dem Live Trading"
+  ],
+  "summary": {
+    "total_checks": 12,
+    "passed_checks": 3,
+    "failed_checks": 7,
+    "warnings": 2,
+    "pass_rate": 25.0
+  }
+}

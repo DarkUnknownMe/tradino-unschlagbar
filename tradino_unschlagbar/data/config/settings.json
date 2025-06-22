@@ -1,0 +1,42 @@
+{
+  "trading": {
+    "enabled": true,
+    "mode": "demo",
+    "auto_start": false,
+    "max_positions": 5,
+    "position_timeout": 300
+  },
+  "ai": {
+    "models": {
+      "price_prediction": {
+        "enabled": true,
+        "model_path": "models/lstm_price_predictor.pkl",
+        "update_frequency": 3600
+      },
+      "signal_generation": {
+        "enabled": true,
+        "model_path": "models/xgboost_signals.pkl",
+        "update_frequency": 1800
+      },
+      "pattern_recognition": {
+        "enabled": true,
+        "model_path": "models/pattern_recognizer.pkl",
+        "confidence_threshold": 0.75
+      }
+    }
+  },
+  "notifications": {
+    "telegram": {
+      "enabled": true,
+      "send_trades": true,
+      "send_errors": true,
+      "send_summaries": true
+    }
+  },
+  "performance": {
+    "tracking_enabled": true,
+    "backup_enabled": true,
+    "log_trades": true,
+    "generate_reports": true
+  }
+} 

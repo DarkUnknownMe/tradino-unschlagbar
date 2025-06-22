@@ -1,0 +1,236 @@
+# config.yaml - Hauptkonfiguration für TRADINO UNSCHLAGBAR
+system:
+  name: "TRADINO_UNSCHLAGBAR"
+  version: "1.0.0"
+  environment: "demo"  # demo/live
+  debug: true
+  log_level: "INFO"
+
+# Trading Konfiguration
+trading:
+  # Kapital Management
+  initial_capital: 1000.0  # USDT - Konfigurierbarer Parameter
+  max_positions: 5
+  max_daily_trades: 50
+  
+  # Risk Management (Military Grade)
+  risk_per_trade: 0.03  # 3% pro Trade
+  max_daily_drawdown: 0.05  # 5% maximaler Tagesverlust
+  max_correlation: 0.50  # 50% maximale Korrelation
+  portfolio_heat_limit: 0.15  # 15% Portfolio Heat
+  
+  # Leverage Management (Automatisch)
+  min_leverage: 1
+  max_leverage: 10
+  leverage_strategy: "dynamic"  # dynamic/fixed
+  
+  # Performance Targets
+  target_win_rate: 0.60  # 60%
+  target_profit_factor: 1.5
+  target_sharpe_ratio: 1.2
+  max_drawdown_limit: 0.10  # 10%
+
+# Trading Strategien
+strategies:
+  scalping_master:
+    enabled: true
+    timeframes: ["1m", "3m", "5m"]
+    target_win_rate: 0.67
+    risk_reward: 1.2
+    max_trades_per_day: 50
+    market_conditions: ["high_volume", "high_volatility"]
+    
+  swing_genius:
+    enabled: true
+    timeframes: ["1h", "2h", "4h"]
+    target_win_rate: 0.58
+    risk_reward: 2.5
+    max_trades_per_week: 15
+    market_conditions: ["trending"]
+    
+  trend_hunter:
+    enabled: true
+    timeframes: ["4h", "6h", "1d"]
+    target_win_rate: 0.53
+    risk_reward: 3.0
+    max_trades_per_month: 20
+    market_conditions: ["strong_trend"]
+    
+  mean_reversion:
+    enabled: true
+    timeframes: ["15m", "30m", "1h"]
+    target_win_rate: 0.73
+    risk_reward: 1.5
+    max_trades_per_day: 15
+    market_conditions: ["range_bound"]
+
+# Exchange Konfiguration
+exchange:
+  name: "bitget"
+  sandbox: true  # Demo Account
+  api_key: ""  # Wird aus .env geladen
+  api_secret: ""  # Wird aus .env geladen
+  api_passphrase: ""  # Wird aus .env geladen
+  
+  # API Performance
+  rate_limit: 20  # Requests pro Sekunde
+  timeout: 5000  # 5 Sekunden
+  retry_attempts: 3
+  retry_delay: 1.0
+
+# Market Data
+market_data:
+  # Profitable Paare Auto-Detection
+  auto_pair_selection: true
+  min_volume_24h: 10000000.0  # 10M USDT Mindestvolumen
+  min_price_change: 0.02  # 2% Mindestbewegung
+  max_pairs: 10  # Maximal 10 Paare gleichzeitig
+  
+  # Datenquellen
+  primary_source: "bitget"
+  backup_sources: ["binance", "okx"]
+  
+  # Update Frequenzen
+  tick_interval: 1  # Sekunden
+  candle_interval: "1m"  # Standard Timeframe
+  
+# AI/ML Konfiguration
+ai:
+  # Model Konfiguration
+  models_enabled: true
+  model_update_frequency: "daily"
+  retrain_threshold: 0.05  # 5% Performance-Drop
+  
+  # LSTM Konfiguration
+  lstm:
+    sequence_length: 60
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.2
+    learning_rate: 0.001
+    
+  # XGBoost Konfiguration
+  xgboost:
+    n_estimators: 100
+    max_depth: 6
+    learning_rate: 0.1
+    subsample: 0.8
+    
+  # Random Forest
+  random_forest:
+    n_estimators: 200
+    max_depth: 10
+    min_samples_split: 5
+    min_samples_leaf: 2
+
+# Technical Analysis
+technical_analysis:
+  # Standard Indikatoren
+  indicators:
+    - "RSI"
+    - "MACD" 
+    - "Bollinger_Bands"
+    - "EMA_12"
+    - "EMA_26"
+    - "SMA_50"
+    - "SMA_200"
+    - "Stochastic"
+    - "Williams_R"
+    - "CCI"
+    - "ADX"
+    - "ATR"
+    - "OBV"
+    - "Volume_SMA"
+    - "VWAP"
+    - "Fibonacci"
+    - "Pivot_Points"
+    - "Support_Resistance"
+    - "Ichimoku"
+    - "Parabolic_SAR"
+  
+  # Pattern Recognition
+  patterns:
+    candlestick_patterns: 50  # Anzahl erkannter Patterns
+    chart_patterns: true
+    price_action: true
+    custom_patterns: true
+
+# Telegram Konfiguration
+telegram:
+  enabled: true
+  bot_token: ""  # Wird aus .env geladen
+  chat_id: ""  # Wird aus .env geladen
+  
+  # Benachrichtigungs-Level: VOLLSTÄNDIG
+  notifications:
+    trade_signals: true
+    trade_execution: true
+    position_updates: true
+    pnl_updates: true
+    risk_alerts: true
+    system_status: true
+    daily_reports: true
+    weekly_reports: true
+    emergency_alerts: true
+    
+  # Befehle
+  commands:
+    - "/start"
+    - "/stop" 
+    - "/status"
+    - "/portfolio"
+    - "/performance"
+    - "/positions"
+    - "/settings"
+    - "/help"
+
+# Performance Monitoring
+monitoring:
+  # Performance Targets
+  signal_generation_ms: 100
+  trade_execution_ms: 50
+  api_response_ms: 200
+  memory_limit_mb: 500
+  cpu_limit_percent: 50
+  uptime_target: 0.999
+  error_rate_limit: 0.001
+  
+  # Alerts
+  performance_alerts: true
+  system_health_checks: true
+  auto_recovery: true
+  backup_frequency: "hourly"
+
+# Logging
+logging:
+  level: "INFO"
+  format: "detailed"
+  file_rotation: "daily"
+  max_files: 30
+  compress_old: true
+  
+  # Log Kategorien
+  categories:
+    trading: true
+    ai_models: true
+    risk_management: true
+    performance: true
+    system: true
+    errors: true
+
+# Security
+security:
+  input_validation: true
+  api_key_encryption: true
+  rate_limiting: true
+  ip_whitelist: []
+  max_login_attempts: 3
+  session_timeout: 3600  # 1 Stunde
+  
+# Backup & Recovery
+backup:
+  enabled: true
+  frequency: "hourly"
+  retention_days: 30
+  cloud_backup: false  # Lokale Backups
+  auto_restore: true 
