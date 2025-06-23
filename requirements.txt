@@ -110,3 +110,41 @@ pytorch-lightning==2.1.3
 arch==6.2.0
 statsmodels==0.14.1
 pmdarima==2.0.4
+
+
+# AI TRADING SYSTEM REQUIREMENTS
+# AI/ML Dependencies
+torch>=1.11.0
+torchvision>=0.12.0
+tensorflow>=2.8.0
+gym>=0.21.0
+stable-baselines3>=1.6.0
+optuna>=2.10.0
+
+# Data Science
+scikit-learn>=1.1.0
+xgboost>=1.6.0
+lightgbm>=3.3.0
+catboost>=1.0.0
+
+# Technical Analysis Enhanced
+ta>=0.10.2
+talib-binary>=0.4.19
+
+# Sentiment Analysis
+nltk>=3.7
+textblob>=0.17.1
+vaderSentiment>=3.3.2
+
+# Performance & Optimization
+numba>=0.56.0
+joblib>=1.1.0
+
+# Visualization Enhanced
+plotly>=5.8.0
+seaborn>=0.11.0
+
+# Configuration & Utilities
+pydantic>=1.9.0
+hydra-core>=1.1.0
+omegaconf>=2.1.0

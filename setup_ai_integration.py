@@ -1,132 +1,200 @@
 #!/usr/bin/env python3
 """
-🤖 TRADINO UNSCHLAGBAR - Complete AI Integration Setup
-====================================================
-
-Vollständige AI-Integration mit RL, Multi-Agent System und Neural Architecture Search
+🤖 TRADINO UNSCHLAGBAR - AI INTEGRATION SETUP
+Automatisierte Integration aller AI-Komponenten
 """
 
 import os
 import sys
 import shutil
+import json
 from datetime import datetime
 from pathlib import Path
 
-class TradinoAIIntegrator:
+class TradinoAISetup:
     def __init__(self):
         self.project_root = Path.cwd()
-        self.backup_dir = self.project_root / f"backups/ai_integration_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self.backup_dir = self.project_root / "backup_before_ai_integration"
+        self.tradino_dir = self.project_root / "tradino_unschlagbar"
         
+        print("🤖 TRADINO UNSCHLAGBAR - AI INTEGRATION SETUP")
+        print("=" * 60)
+        print(f"📁 Project Root: {self.project_root}")
+        print(f"🔄 Integration Target: {self.tradino_dir}")
+    
     def create_backup(self):
-        """Erstellt Backup vor Integration"""
-        print("💾 Creating backup of existing files...")
-        self.backup_dir.mkdir(parents=True, exist_ok=True)
+        """📦 Erstelle Backup der bestehenden Dateien"""
+        print("\n📦 ERSTELLE BACKUP...")
         
-        # Backup critical files
-        critical_files = [
-            "tradino_unschlagbar/brain/",
-            "tradino_unschlagbar/analytics/",
+        if self.backup_dir.exists():
+            shutil.rmtree(self.backup_dir)
+        
+        # Backup wichtiger Dateien
+        files_to_backup = [
+            "alpha_smart_position_manager.py",
+            "telegram_control_panel_enhanced.py",
+            "comprehensive_system_test.py",
             "requirements.txt"
         ]
         
-        for file_path in critical_files:
-            src = self.project_root / file_path
+        self.backup_dir.mkdir(exist_ok=True)
+        
+        for file in files_to_backup:
+            src = self.project_root / file
             if src.exists():
-                if src.is_dir():
-                    dst = self.backup_dir / file_path
-                    dst.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copytree(src, dst, dirs_exist_ok=True)
-                else:
-                    dst = self.backup_dir / file_path
-                    dst.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(src, dst)
+                dst = self.backup_dir / file
+                shutil.copy2(src, dst)
+                print(f"✅ Backup: {file}")
         
-        print(f"✅ Backup created in: {self.backup_dir}")
+        print(f"✅ Backup erstellt in: {self.backup_dir}")
     
-    def setup_ai_components(self):
-        """Setup AI components"""
-        print("🤖 Setting up AI components...")
+    def create_directory_structure(self):
+        """📁 Erstelle AI-Verzeichnisstruktur"""
+        print("\n📁 ERSTELLE VERZEICHNISSTRUKTUR...")
         
-        # Ensure directories exist
-        ai_dirs = [
+        directories = [
             "tradino_unschlagbar/brain",
-            "tradino_unschlagbar/analytics", 
-            "tradino_unschlagbar/tests"
+            "tradino_unschlagbar/brain/models",
+            "tradino_unschlagbar/brain/agents", 
+            "tradino_unschlagbar/brain/nas",
+            "tradino_unschlagbar/brain/training",
+            "tradino_unschlagbar/core",
+            "tradino_unschlagbar/utils",
+            "tradino_unschlagbar/config",
+            "tradino_unschlagbar/models",
+            "tradino_unschlagbar/data",
+            "tradino_unschlagbar/logs",
+            "tradino_unschlagbar/tests",
+            "scripts"
         ]
         
-        for dir_path in ai_dirs:
-            (self.project_root / dir_path).mkdir(parents=True, exist_ok=True)
-            
-        print("✅ AI directory structure created")
+        for directory in directories:
+            dir_path = self.project_root / directory
+            dir_path.mkdir(parents=True, exist_ok=True)
+            print(f"✅ Created: {directory}")
+    
+    def create_init_files(self):
+        """🔧 Erstelle __init__.py Dateien"""
+        print("\n🔧 ERSTELLE __init__.py DATEIEN...")
+        
+        init_files = [
+            "tradino_unschlagbar/__init__.py",
+            "tradino_unschlagbar/brain/__init__.py",
+            "tradino_unschlagbar/brain/models/__init__.py",
+            "tradino_unschlagbar/brain/agents/__init__.py",
+            "tradino_unschlagbar/brain/nas/__init__.py",
+            "tradino_unschlagbar/brain/training/__init__.py",
+            "tradino_unschlagbar/core/__init__.py",
+            "tradino_unschlagbar/utils/__init__.py",
+        ]
+        
+        for init_file in init_files:
+            file_path = self.project_root / init_file
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write('"""TRADINO UNSCHLAGBAR AI Trading System"""\n')
+            print(f"✅ Created: {init_file}")
     
     def update_requirements(self):
-        """Update requirements with AI dependencies"""
-        print("📦 Updating requirements with AI dependencies...")
+        """📋 Update requirements.txt"""
+        print("\n📋 UPDATE REQUIREMENTS.TXT...")
         
-        ai_requirements = """
-# AI & Machine Learning (Enhanced)
-tensorflow==2.15.0
-torch==2.1.2
-torch-audio==2.1.2
-torch-vision==0.16.2
-stable-baselines3==2.2.1
-sb3-contrib==2.2.1
-gym==0.26.2
-gymnasium==0.29.1
-
-# Advanced ML
-optuna==3.5.0
-hyperopt==0.2.7
-ray[tune]==2.8.1
-wandb==0.16.1
-
-# Deep Learning Utils
-tensorboard==2.15.1
-keras==2.15.0
-pytorch-lightning==2.1.3
-
-# Time Series & Financial
-arch==6.2.0
-statsmodels==0.14.1
-pmdarima==2.0.4
-"""
+        new_requirements = [
+            "# AI/ML Dependencies",
+            "torch>=1.11.0",
+            "torchvision>=0.12.0", 
+            "tensorflow>=2.8.0",
+            "gym>=0.21.0",
+            "stable-baselines3>=1.6.0",
+            "optuna>=2.10.0",
+            "",
+            "# Data Science",
+            "scikit-learn>=1.1.0",
+            "xgboost>=1.6.0",
+            "lightgbm>=3.3.0",
+            "catboost>=1.0.0",
+            "",
+            "# Technical Analysis Enhanced",
+            "ta>=0.10.2",
+            "talib-binary>=0.4.19",
+            "",
+            "# Sentiment Analysis",
+            "nltk>=3.7",
+            "textblob>=0.17.1",
+            "vaderSentiment>=3.3.2",
+            "",
+            "# Performance & Optimization",
+            "numba>=0.56.0",
+            "joblib>=1.1.0",
+            "",
+            "# Visualization Enhanced",
+            "plotly>=5.8.0",
+            "seaborn>=0.11.0",
+            "",
+            "# Configuration & Utilities",
+            "pydantic>=1.9.0",
+            "hydra-core>=1.1.0",
+            "omegaconf>=2.1.0"
+        ]
         
+        # Lese bestehende requirements
         req_file = self.project_root / "requirements.txt"
-        with open(req_file, "a") as f:
-            f.write(ai_requirements)
-            
-        print("✅ AI requirements added")
-    
-    def run_integration(self):
-        """Führt komplette Integration aus"""
-        print("🚀 Starting TRADINO UNSCHLAGBAR AI Integration...")
-        print("=" * 60)
+        existing_reqs = []
+        if req_file.exists():
+            with open(req_file, 'r') as f:
+                existing_reqs = f.readlines()
         
+        # Schreibe erweiterte requirements
+        with open(req_file, 'w', encoding='utf-8') as f:
+            # Schreibe bestehende requirements
+            for req in existing_reqs:
+                f.write(req)
+            
+            # Füge neue requirements hinzu
+            f.write("\n\n# AI TRADING SYSTEM REQUIREMENTS\n")
+            for req in new_requirements:
+                f.write(req + "\n")
+        
+        print("✅ Requirements.txt erweitert")
+    
+    def run_setup(self):
+        """🚀 Führe komplettes Setup aus"""
         try:
-            # 1. Backup
+            print("🚀 STARTE AI INTEGRATION SETUP...")
+            
+            # Bestätige dass wir im richtigen Verzeichnis sind
+            if not (self.project_root / "alpha_smart_position_manager.py").exists():
+                print("❌ FEHLER: Nicht im TRADINO UNSCHLAGBAR Projekt-Verzeichnis!")
+                print("💡 Führen Sie dieses Script im Repository-Root aus")
+                return False
+            
+            # Setup Steps
             self.create_backup()
-            
-            # 2. Setup AI components
-            self.setup_ai_components()
-            
-            # 3. Update requirements
+            self.create_directory_structure()
+            self.create_init_files()
             self.update_requirements()
             
-            print("\n🎉 AI Integration completed successfully!")
+            print("\n🎉 AI INTEGRATION SETUP ABGESCHLOSSEN!")
             print("=" * 60)
-            print("✅ Backups created")
-            print("✅ AI components installed")
-            print("✅ Directory structure enhanced") 
-            print("✅ Requirements updated")
-            print("\n🚀 Ready for GitHub commit!")
+            print("📁 Verzeichnisstruktur erstellt")
+            print("📦 Backup erstellt")
+            print("📋 Requirements erweitert")
+            print("\n🔄 NÄCHSTE SCHRITTE:")
+            print("1. Führen Sie: python create_ai_components.py")
+            print("2. Installieren Sie neue Dependencies: pip install -r requirements.txt")
+            print("3. Starten Sie das AI System: python scripts/start_ai_trading.py")
             
             return True
             
         except Exception as e:
-            print(f"❌ Integration failed: {e}")
+            print(f"❌ SETUP FEHLER: {e}")
             return False
 
 if __name__ == "__main__":
-    integrator = TradinoAIIntegrator()
-    success = integrator.run_integration()
-    sys.exit(0 if success else 1)
+    setup = TradinoAISetup()
+    success = setup.run_setup()
+    
+    if success:
+        print("\n✅ BEREIT FÜR AI-KOMPONENTEN INSTALLATION!")
+    else:
+        print("\n❌ SETUP FEHLGESCHLAGEN!")
+        sys.exit(1)
