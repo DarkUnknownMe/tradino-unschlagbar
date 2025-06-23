@@ -17,6 +17,9 @@ pandas-ta>=0.3.14b
 scikit-learn>=1.0.0
 scipy>=1.7.0
 
+# Portfolio Optimization
+cvxpy>=1.4.0
+
 # Performance
 numba>=0.56.0
 joblib>=1.0.0
