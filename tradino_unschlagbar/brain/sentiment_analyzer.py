@@ -193,8 +193,8 @@ class WorldClassSentimentEngine:
             options_flow,
             tech_sentiment
         ])
-        
-        return {
+            
+            return {
             'source': 'market_data',
             'sentiment_score': market_sentiment,
             'sentiment_label': self._get_sentiment_label(market_sentiment),
@@ -251,7 +251,7 @@ class WorldClassSentimentEngine:
         
         if bullish_score + bearish_score == 0:
             return 0.0
-        
+    
         return (bullish_score - bearish_score) / (bullish_score + bearish_score)
     
     def _analyze_emoji_sentiment(self, text: str) -> float:
@@ -367,7 +367,7 @@ class WorldClassSentimentEngine:
         elif score < -0.1:
             signal = 'SELL'
             position_size = min(0.8, strength)
-        else:
+            else:
             signal = 'HOLD'
             position_size = 0.0
         
@@ -423,12 +423,12 @@ class WorldClassSentimentEngine:
             trend = 'improving' if scores[-1] > scores[0] else 'declining'
             volatility = np.std(scores)
             avg_sentiment = np.mean(scores)
-        else:
+            else:
             trend = 'stable'
             volatility = 0
             avg_sentiment = scores[0] if scores else 0
-        
-        return {
+            
+            return {
             'trend': trend,
             'avg_sentiment': avg_sentiment,
             'volatility': volatility,

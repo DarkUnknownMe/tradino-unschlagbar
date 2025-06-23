@@ -1,0 +1,44 @@
+# TRADINO UNSCHLAGBAR - AI DEPENDENCIES
+# Core AI/ML Dependencies
+torch>=1.11.0,<2.5.0
+torchvision>=0.12.0,<0.20.0
+numpy>=1.21.0,<2.0.0
+pandas>=1.3.0,<3.0.0
+
+# Exchange & Trading (kompatible Version)
+ccxt>=4.4.0,<5.0.0
+python-dotenv>=0.19.0
+
+# Technical Analysis
+ta>=0.10.0
+pandas-ta>=0.3.14b
+
+# Data Science
+scikit-learn>=1.0.0
+scipy>=1.7.0
+
+# Portfolio Optimization
+cvxpy>=1.4.0
+
+# Performance
+numba>=0.56.0
+joblib>=1.0.0
+
+# Utilities
+tqdm>=4.60.0
+pydantic>=1.9.0
+
+# Async Support
+asyncio>=3.4.3
+
+# Logging
+loguru>=0.6.0
+
+# Optional GPU Support (falls verfügbar)
+# tensorflow>=2.8.0
+
+# Telegram Bot
+python-telegram-bot>=22.0
+
+# Development
+pytest>=6.0.0 

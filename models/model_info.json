@@ -1,0 +1,32 @@
+{
+  "xgboost_trend": {
+    "type": "xgboost",
+    "metrics": {
+      "accuracy": 0.7477952124613446,
+      "cv_mean": 0.7033302780323862,
+      "cv_std": 0.0033538799877940667
+    }
+  },
+  "lightgbm_volatility": {
+    "type": "lightgbm",
+    "metrics": {
+      "accuracy": 0.7506585729011568,
+      "cv_mean": 0.7021081576535289,
+      "cv_std": 0.000990030659701783
+    }
+  },
+  "random_forest_risk": {
+    "type": "random_forest",
+    "metrics": {
+      "accuracy": 0.7823846065742756,
+      "cv_mean": 0.7065383440268868,
+      "cv_std": 0.006613156376997679
+    }
+  },
+  "ensemble": {
+    "type": "ensemble",
+    "metrics": {
+      "accuracy": 0.7598213263085557
+    }
+  }
+}

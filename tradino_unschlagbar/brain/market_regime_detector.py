@@ -7,8 +7,8 @@ Erkennung von Marktphasen für optimale Trading-Strategien
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Tuple, Any, Optional
-from sklearn.preprocessing import StandardScaler
-from hmmlearn import hmm
+    from sklearn.preprocessing import StandardScaler
+    from hmmlearn import hmm
 import warnings
 warnings.filterwarnings('ignore')
 
