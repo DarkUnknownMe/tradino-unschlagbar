@@ -33,16 +33,16 @@ class Bitget100PercentFix:
     def _init_exchange(self):
         try:
             # Initialize success_results first
-            self.success_results = {
-                'api_connection': False,
-                'position_mode_optimal': False,
-                'order_placement_working': False,
-                'stop_loss_functional': False,
-                'take_profit_functional': False,
-                'position_management': False,
-                'live_trading_ready': False
-            }
-            
+        self.success_results = {
+            'api_connection': False,
+            'position_mode_optimal': False,
+            'order_placement_working': False,
+            'stop_loss_functional': False,
+            'take_profit_functional': False,
+            'position_management': False,
+            'live_trading_ready': False
+        }
+        
             self.exchange = ccxt.bitget({
                 'apiKey': self.api_key,
                 'secret': self.secret_key,
