@@ -37,5 +37,8 @@ loguru>=0.6.0
 # Optional GPU Support (falls verfügbar)
 # tensorflow>=2.8.0
 
+# Telegram Bot
+python-telegram-bot>=22.0
+
 # Development
 pytest>=6.0.0 
