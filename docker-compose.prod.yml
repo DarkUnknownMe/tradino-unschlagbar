@@ -1,0 +1,326 @@
+# =========================================================================
+# TRADINO UNSCHLAGBAR - Production Docker Compose
+# Secure production environment with SSL and monitoring
+# =========================================================================
+
+version: '3.8'
+
+services:
+  # ====================
+  # NGINX REVERSE PROXY
+  # ====================
+  tradino-nginx:
+    image: nginx:alpine
+    container_name: tradino-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/ssl:/etc/nginx/ssl:ro
+      - tradino-logs:/var/log/nginx
+    depends_on:
+      - tradino-app
+    networks:
+      - tradino-network
+      - tradino-public
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ====================
+  # TRADINO MAIN APPLICATION
+  # ====================
+  tradino-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        ENVIRONMENT: production
+        BUILD_DATE: ${BUILD_DATE}
+        GIT_COMMIT: ${GIT_COMMIT}
+    container_name: tradino-app-prod
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@tradino-redis:6379
+      - POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@tradino-postgres:5432/${POSTGRES_DB}
+    env_file:
+      - .env.production
+    secrets:
+      - bitget_api_key
+      - bitget_secret
+      - telegram_bot_token
+      - postgres_password
+      - redis_password
+    expose:
+      - "8000"
+      - "8001"
+    volumes:
+      - tradino-data:/app/data
+      - tradino-logs:/app/logs
+      - tradino-models:/app/models
+      - /etc/ssl/certs:/etc/ssl/certs:ro  # System CA certificates
+    depends_on:
+      tradino-redis:
+        condition: service_healthy
+      tradino-postgres:
+        condition: service_healthy
+    networks:
+      - tradino-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # ====================
+  # REDIS (Production Secured)
+  # ====================
+  tradino-redis:
+    image: redis:7-alpine
+    container_name: tradino-redis-prod
+    restart: unless-stopped
+    expose:
+      - "6379"
+    volumes:
+      - tradino-redis-data:/data
+      - ./deploy/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
+    networks:
+      - tradino-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # ====================
+  # POSTGRESQL (Production Secured)
+  # ====================
+  tradino-postgres:
+    image: postgres:15-alpine
+    container_name: tradino-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    secrets:
+      - postgres_password
+    expose:
+      - "5432"
+    volumes:
+      - tradino-postgres-data:/var/lib/postgresql/data
+      - ./deploy/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./deploy/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - tradino-postgres-backups:/backups
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    networks:
+      - tradino-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  # ====================
+  # MONITORING - PROMETHEUS
+  # ====================
+  tradino-prometheus:
+    image: prom/prometheus:latest
+    container_name: tradino-prometheus-prod
+    restart: unless-stopped
+    user: "65534:65534"  # nobody user
+    expose:
+      - "9090"
+    volumes:
+      - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/monitoring/rules:/etc/prometheus/rules:ro
+      - tradino-prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=90d'
+      - '--web.enable-lifecycle'
+      - '--web.external-url=https://monitoring.nobelbrett.com/prometheus'
+    networks:
+      - tradino-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # ====================
+  # MONITORING - GRAFANA
+  # ====================
+  tradino-grafana:
+    image: grafana/grafana:latest
+    container_name: tradino-grafana-prod
+    restart: unless-stopped
+    user: "472:472"  # grafana user
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD_FILE=/run/secrets/grafana_admin_password
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://monitoring.nobelbrett.com/grafana
+      - GF_SECURITY_COOKIE_SECURE=true
+      - GF_SECURITY_COOKIE_SAMESITE=strict
+      - GF_SESSION_PROVIDER=redis
+      - GF_SESSION_PROVIDER_CONFIG=addr=tradino-redis:6379,password=${REDIS_PASSWORD},db=1
+    secrets:
+      - grafana_admin_password
+    expose:
+      - "3000"
+    volumes:
+      - tradino-grafana-data:/var/lib/grafana
+      - ./deploy/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - tradino-prometheus
+      - tradino-redis
+    networks:
+      - tradino-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # ====================
+  # LOG FORWARDING
+  # ====================
+  tradino-filebeat:
+    image: docker.elastic.co/beats/filebeat:8.8.0
+    container_name: tradino-filebeat-prod
+    restart: unless-stopped
+    user: root
+    volumes:
+      - ./deploy/logging/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - tradino-logs:/var/log/tradino:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - ELASTICSEARCH_HOSTS=${ELASTICSEARCH_HOSTS}
+      - KIBANA_HOST=${KIBANA_HOST}
+    depends_on:
+      - tradino-app
+    networks:
+      - tradino-network
+
+  # ====================
+  # BACKUP SERVICE
+  # ====================
+  tradino-backup:
+    build:
+      context: ./deploy/backup
+      dockerfile: Dockerfile
+    container_name: tradino-backup-prod
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=tradino-postgres
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
+      - S3_BUCKET=${BACKUP_S3_BUCKET}
+      - AWS_ACCESS_KEY_ID_FILE=/run/secrets/aws_access_key
+      - AWS_SECRET_ACCESS_KEY_FILE=/run/secrets/aws_secret_key
+    secrets:
+      - postgres_password
+      - aws_access_key
+      - aws_secret_key
+    volumes:
+      - tradino-postgres-backups:/backups
+      - tradino-data:/app/data:ro
+      - ./deploy/backup/backup.sh:/backup.sh:ro
+    networks:
+      - tradino-network
+    depends_on:
+      - tradino-postgres
+
+# ====================
+# SECRETS
+# ====================
+secrets:
+  bitget_api_key:
+    external: true
+  bitget_secret:
+    external: true
+  telegram_bot_token:
+    external: true
+  postgres_password:
+    external: true
+  redis_password:
+    external: true
+  grafana_admin_password:
+    external: true
+  aws_access_key:
+    external: true
+  aws_secret_key:
+    external: true
+
+# ====================
+# VOLUMES
+# ====================
+volumes:
+  tradino-data:
+    driver: local
+  tradino-logs:
+    driver: local
+  tradino-models:
+    driver: local
+  tradino-redis-data:
+    driver: local
+  tradino-postgres-data:
+    driver: local
+  tradino-postgres-backups:
+    driver: local
+  tradino-prometheus-data:
+    driver: local
+  tradino-grafana-data:
+    driver: local
+
+# ====================
+# NETWORKS
+# ====================
+networks:
+  tradino-network:
+    driver: bridge
+    internal: true
+  tradino-public:
+    driver: bridge 

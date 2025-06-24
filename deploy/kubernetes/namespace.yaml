@@ -1,0 +1,170 @@
+# =========================================================================
+# TRADINO UNSCHLAGBAR - Kubernetes Namespace
+# Isolated namespace with resource quotas and network policies
+# =========================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tradino-production
+  labels:
+    name: tradino-production
+    environment: production
+    app: tradino-unschlagbar
+    version: "1.0.0"
+  annotations:
+    description: "TRADINO Advanced AI Trading System - Production Environment"
+
+---
+# Resource Quota
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tradino-resource-quota
+  namespace: tradino-production
+spec:
+  hard:
+    # Compute resources
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "16"
+    limits.memory: 32Gi
+    
+    # Storage resources
+    requests.storage: 100Gi
+    persistentvolumeclaims: "10"
+    
+    # Object counts
+    pods: "20"
+    services: "10"
+    secrets: "20"
+    configmaps: "20"
+    deployments.apps: "10"
+
+---
+# Limit Range
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: tradino-limit-range
+  namespace: tradino-production
+spec:
+  limits:
+    # Default limits for containers
+    - type: Container
+      default:
+        cpu: "1"
+        memory: 2Gi
+      defaultRequest:
+        cpu: "100m"
+        memory: 256Mi
+      max:
+        cpu: "4"
+        memory: 8Gi
+      min:
+        cpu: "50m"
+        memory: 128Mi
+    
+    # Default limits for pods
+    - type: Pod
+      max:
+        cpu: "8"
+        memory: 16Gi
+      min:
+        cpu: "100m"
+        memory: 256Mi
+
+---
+# Network Policy - Default Deny
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tradino-default-deny-all
+  namespace: tradino-production
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+
+---
+# Network Policy - Allow Internal Communication
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tradino-allow-internal
+  namespace: tradino-production
+spec:
+  podSelector:
+    matchLabels:
+      app: tradino
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: tradino-production
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: tradino-production
+  - to: {}
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80
+
+---
+# Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tradino-service-account
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: service-account
+automountServiceAccountToken: false
+
+---
+# Role for the service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: tradino-production
+  name: tradino-role
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+
+---
+# Role binding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tradino-role-binding
+  namespace: tradino-production
+subjects:
+- kind: ServiceAccount
+  name: tradino-service-account
+  namespace: tradino-production
+roleRef:
+  kind: Role
+  name: tradino-role
+  apiGroup: rbac.authorization.k8s.io 

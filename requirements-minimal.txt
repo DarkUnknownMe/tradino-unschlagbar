@@ -1,0 +1,69 @@
+# =========================================================================
+# TRADINO UNSCHLAGBAR - Minimal Production Requirements
+# Nur essentielle Dependencies für Production Deployment
+# =========================================================================
+
+# ===================
+# CORE TRADING SYSTEM
+# ===================
+ccxt>=4.4.0,<5.0.0              # Crypto exchange library
+aiohttp>=3.12.0,<4.0.0          # Async HTTP client
+websockets>=12.0                # WebSocket support
+requests>=2.31.0                # HTTP requests fallback
+
+# ===================
+# DATA & ANALYTICS
+# ===================
+numpy>=1.26.0,<2.2.0            # Numerical computing (kompatibel)
+pandas>=2.2.0,<3.0.0            # Data analysis
+scipy>=1.11.0                   # Scientific computing
+pytz>=2023.3                    # Timezone handling
+python-dateutil>=2.8.0          # Date parsing
+
+# ===================
+# MACHINE LEARNING
+# ===================
+scikit-learn>=1.4.0             # Core ML algorithms
+xgboost>=3.0.0                  # Gradient boosting
+lightgbm>=4.0.0                 # Gradient boosting
+joblib>=1.3.0                   # ML model persistence
+
+# ===================
+# TECHNICAL ANALYSIS
+# ===================
+ta>=0.11.0                      # Technical Analysis library
+pandas-ta>=0.3.14b              # Technical Analysis mit Pandas
+# talib-binary optional - problematisch auf manchen Systemen
+
+# ===================
+# TELEGRAM & NOTIFICATIONS
+# ===================
+python-telegram-bot>=22.0       # Telegram Bot API
+python-dotenv>=1.0.0            # Environment variables
+
+# ===================
+# CONFIGURATION
+# ===================
+pydantic>=2.5.0                 # Data validation & settings
+PyYAML>=6.0.0                   # YAML configuration
+marshmallow>=3.20.0             # Serialization
+
+# ===================
+# LOGGING & MONITORING
+# ===================
+loguru>=0.7.0                   # Advanced logging
+structlog>=23.2.0               # Structured logging
+
+# ===================
+# SECURITY
+# ===================
+cryptography>=41.0.0            # Cryptographic functions
+
+# ===================
+# UTILITIES
+# ===================
+click>=8.1.0                    # CLI creation
+colorama>=0.4.6                 # Colored output
+tqdm>=4.66.0                    # Progress bars
+schedule>=1.2.0                 # Job scheduling
+psutil>=5.9.0                   # System monitoring 

@@ -1,0 +1,227 @@
+# =========================================================================
+# TRADINO UNSCHLAGBAR - Development Docker Compose
+# Complete development environment with all services
+# =========================================================================
+
+version: '3.8'
+
+services:
+  # ====================
+  # TRADINO MAIN APPLICATION
+  # ====================
+  tradino-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        ENVIRONMENT: development
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+    container_name: tradino-app-dev
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=DEBUG
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://tradino-redis:6379
+      - POSTGRES_URL=postgresql://tradino:tradino_pass@tradino-postgres:5432/tradino_db
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"  # Main application
+      - "8001:8001"  # Dashboard
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./models:/app/models
+      - ./config:/app/config
+      - tradino-data:/app/data/persistent
+    depends_on:
+      - tradino-redis
+      - tradino-postgres
+    networks:
+      - tradino-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ====================
+  # REDIS CACHE & QUEUE
+  # ====================
+  tradino-redis:
+    image: redis:7-alpine
+    container_name: tradino-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - tradino-redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    networks:
+      - tradino-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ====================
+  # POSTGRESQL DATABASE
+  # ====================
+  tradino-postgres:
+    image: postgres:15-alpine
+    container_name: tradino-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tradino_db
+      POSTGRES_USER: tradino
+      POSTGRES_PASSWORD: tradino_pass
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - tradino-postgres-data:/var/lib/postgresql/data
+      - ./deploy/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - tradino-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tradino -d tradino_db"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ====================
+  # MONITORING - PROMETHEUS
+  # ====================
+  tradino-prometheus:
+    image: prom/prometheus:latest
+    container_name: tradino-prometheus-dev
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - tradino-prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - tradino-network
+
+  # ====================
+  # MONITORING - GRAFANA
+  # ====================
+  tradino-grafana:
+    image: grafana/grafana:latest
+    container_name: tradino-grafana-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=tradino_admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - tradino-grafana-data:/var/lib/grafana
+      - ./deploy/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - tradino-prometheus
+    networks:
+      - tradino-network
+
+  # ====================
+  # LOG AGGREGATION - ELASTICSEARCH
+  # ====================
+  tradino-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    container_name: tradino-elasticsearch-dev
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - tradino-elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - tradino-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ====================
+  # LOG AGGREGATION - KIBANA
+  # ====================
+  tradino-kibana:
+    image: docker.elastic.co/kibana/kibana:8.8.0
+    container_name: tradino-kibana-dev
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://tradino-elasticsearch:9200
+      - SERVER_NAME=tradino-kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - tradino-elasticsearch
+    networks:
+      - tradino-network
+
+  # ====================
+  # JUPYTER NOTEBOOK (Development)
+  # ====================
+  tradino-jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: tradino-jupyter-dev
+    restart: unless-stopped
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+      - ./notebooks:/app/notebooks
+    command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
+    networks:
+      - tradino-network
+
+# ====================
+# VOLUMES
+# ====================
+volumes:
+  tradino-data:
+    driver: local
+  tradino-redis-data:
+    driver: local
+  tradino-postgres-data:
+    driver: local
+  tradino-prometheus-data:
+    driver: local
+  tradino-grafana-data:
+    driver: local
+  tradino-elasticsearch-data:
+    driver: local
+
+# ====================
+# NETWORKS
+# ====================
+networks:
+  tradino-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 

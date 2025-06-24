@@ -1,0 +1,307 @@
+# =========================================================================
+# TRADINO UNSCHLAGBAR - Kubernetes Services
+# Service definitions for load balancing and service discovery
+# =========================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: tradino-app-service
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: app
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8000
+    targetPort: http
+    protocol: TCP
+  - name: dashboard
+    port: 8001
+    targetPort: dashboard
+    protocol: TCP
+  - name: metrics
+    port: 8002
+    targetPort: metrics
+    protocol: TCP
+  selector:
+    app: tradino
+    component: app
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tradino-app-headless
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: app
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: http
+    port: 8000
+    targetPort: http
+    protocol: TCP
+  selector:
+    app: tradino
+    component: app
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tradino-redis-service
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: redis
+spec:
+  type: ClusterIP
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: redis
+    protocol: TCP
+  selector:
+    app: tradino
+    component: redis
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tradino-postgres-service
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: postgres
+spec:
+  type: ClusterIP
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: postgres
+    protocol: TCP
+  selector:
+    app: tradino
+    component: postgres
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tradino-prometheus-service
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: prometheus
+spec:
+  type: ClusterIP
+  ports:
+  - name: prometheus
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  selector:
+    app: tradino
+    component: prometheus
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tradino-grafana-service
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: grafana
+spec:
+  type: ClusterIP
+  ports:
+  - name: grafana
+    port: 3000
+    targetPort: 3000
+    protocol: TCP
+  selector:
+    app: tradino
+    component: grafana
+
+---
+# External LoadBalancer Service for Public Access
+apiVersion: v1
+kind: Service
+metadata:
+  name: tradino-external-service
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: external
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:region:account:certificate/cert-id"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+    external-dns.alpha.kubernetes.io/hostname: "nobelbrett.com,www.nobelbrett.com"
+spec:
+  type: LoadBalancer
+  loadBalancerSourceRanges:
+  - 0.0.0.0/0  # Restrict in production
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 8000
+    protocol: TCP
+  selector:
+    app: tradino
+    component: app
+
+---
+# Monitoring LoadBalancer Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: tradino-monitoring-service
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: monitoring
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:region:account:certificate/cert-id"
+    external-dns.alpha.kubernetes.io/hostname: "monitoring.nobelbrett.com"
+spec:
+  type: LoadBalancer
+  loadBalancerSourceRanges:
+  - 10.0.0.0/8    # Restrict to internal networks
+  - 172.16.0.0/12
+  - 192.168.0.0/16
+  ports:
+  - name: grafana-https
+    port: 443
+    targetPort: 3000
+    protocol: TCP
+  - name: prometheus-https
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  selector:
+    app: tradino
+    component: grafana
+
+---
+# Ingress for HTTP/HTTPS routing
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tradino-ingress
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://nobelbrett.com,https://www.nobelbrett.com"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
+spec:
+  tls:
+  - hosts:
+    - nobelbrett.com
+    - www.nobelbrett.com
+    secretName: tradino-tls-secret
+  - hosts:
+    - monitoring.nobelbrett.com
+    secretName: tradino-monitoring-tls-secret
+  rules:
+  - host: nobelbrett.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tradino-app-service
+            port:
+              number: 8000
+      - path: /api/
+        pathType: Prefix
+        backend:
+          service:
+            name: tradino-app-service
+            port:
+              number: 8000
+      - path: /ws
+        pathType: Prefix
+        backend:
+          service:
+            name: tradino-app-service
+            port:
+              number: 8000
+      - path: /health
+        pathType: Exact
+        backend:
+          service:
+            name: tradino-app-service
+            port:
+              number: 8000
+  - host: www.nobelbrett.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tradino-app-service
+            port:
+              number: 8000
+  - host: monitoring.nobelbrett.com
+    http:
+      paths:
+      - path: /grafana
+        pathType: Prefix
+        backend:
+          service:
+            name: tradino-grafana-service
+            port:
+              number: 3000
+      - path: /prometheus
+        pathType: Prefix
+        backend:
+          service:
+            name: tradino-prometheus-service
+            port:
+              number: 9090
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tradino-grafana-service
+            port:
+              number: 3000 

@@ -1,0 +1,253 @@
+# =========================================================================
+# TRADINO UNSCHLAGBAR - Kubernetes ConfigMaps
+# Application configuration and settings
+# =========================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tradino-config
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: config
+data:
+  # Application settings
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  PYTHONPATH: "/app"
+  
+  # Trading configuration
+  TRADING_MODE: "live"
+  MAX_POSITION_SIZE: "1000"
+  RISK_LIMIT: "5.0"
+  TAKE_PROFIT_PERCENTAGE: "2.0"
+  STOP_LOSS_PERCENTAGE: "1.0"
+  
+  # AI configuration
+  MODEL_UPDATE_INTERVAL: "3600"
+  PREDICTION_THRESHOLD: "0.6"
+  FEATURE_SELECTION_METHOD: "auto"
+  
+  # Database configuration
+  POSTGRES_DB: "tradino_db"
+  POSTGRES_HOST: "tradino-postgres-service"
+  POSTGRES_PORT: "5432"
+  
+  # Redis configuration
+  REDIS_HOST: "tradino-redis-service"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  
+  # Monitoring
+  METRICS_ENABLED: "true"
+  METRICS_PORT: "8000"
+  HEALTH_CHECK_INTERVAL: "30"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tradino-nginx-config
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: nginx
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+    
+    events {
+        worker_connections 1024;
+        use epoll;
+        multi_accept on;
+    }
+    
+    http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+        
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "no-referrer-when-downgrade" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        
+        # Performance
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        client_max_body_size 50M;
+        
+        # Gzip
+        gzip on;
+        gzip_vary on;
+        gzip_min_length 1024;
+        gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+        
+        # Rate limiting
+        limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+        
+        # Logging
+        log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                        '$status $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for" '
+                        '$request_time $upstream_response_time';
+        
+        access_log /var/log/nginx/access.log main;
+        server_tokens off;
+        
+        upstream tradino_backend {
+            server tradino-app-service:8000 max_fails=3 fail_timeout=30s;
+            keepalive 32;
+        }
+        
+        server {
+            listen 80;
+            server_name _;
+            
+            location /health {
+                proxy_pass http://tradino_backend/health;
+                access_log off;
+            }
+            
+            location / {
+                limit_req zone=api burst=20 nodelay;
+                
+                proxy_pass http://tradino_backend;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_cache_bypass $http_upgrade;
+                proxy_connect_timeout 30s;
+                proxy_send_timeout 30s;
+                proxy_read_timeout 30s;
+            }
+            
+            location /ws {
+                proxy_pass http://tradino_backend;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_read_timeout 86400;
+            }
+        }
+    }
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tradino-prometheus-config
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: 'tradino-kubernetes'
+        environment: 'production'
+    
+    rule_files:
+      - "/etc/prometheus/rules/*.yml"
+    
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+      
+      - job_name: 'tradino-app'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - tradino-production
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: tradino-app-service
+          - source_labels: [__meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: metrics
+      
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - tradino-production
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tradino-redis-config
+  namespace: tradino-production
+  labels:
+    app: tradino
+    component: redis
+data:
+  redis.conf: |
+    # Redis configuration for TRADINO
+    bind 0.0.0.0
+    port 6379
+    timeout 0
+    tcp-keepalive 300
+    
+    # Memory management
+    maxmemory 1gb
+    maxmemory-policy allkeys-lru
+    
+    # Persistence
+    save 900 1
+    save 300 10
+    save 60 10000
+    stop-writes-on-bgsave-error yes
+    rdbcompression yes
+    rdbchecksum yes
+    dbfilename dump.rdb
+    dir /data
+    
+    # Append only file
+    appendonly yes
+    appendfilename "appendonly.aof"
+    appendfsync everysec
+    no-appendfsync-on-rewrite no
+    auto-aof-rewrite-percentage 100
+    auto-aof-rewrite-min-size 64mb
+    
+    # Logging
+    loglevel notice
+    logfile ""
+    
+    # Security
+    requirepass ${REDIS_PASSWORD}
+    
+    # Performance
+    tcp-backlog 511
+    databases 16 

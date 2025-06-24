@@ -1,0 +1,223 @@
+# =========================================================================
+# TRADINO UNSCHLAGBAR - Prometheus Alert Rules
+# Critical alerts for trading system monitoring
+# =========================================================================
+
+groups:
+  # ==================
+  # APPLICATION HEALTH
+  # ==================
+  - name: tradino-application
+    rules:
+      - alert: TradinoAppDown
+        expr: up{job="tradino-app"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "TRADINO application is down"
+          description: "TRADINO main application has been down for more than 30 seconds"
+
+      - alert: TradinoHighCPU
+        expr: rate(cpu_usage_seconds_total{job="tradino-app"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "High CPU usage on TRADINO application"
+          description: "CPU usage is above 80% for more than 5 minutes"
+
+      - alert: TradinoHighMemory
+        expr: memory_usage_bytes{job="tradino-app"} / memory_limit_bytes{job="tradino-app"} > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "High memory usage on TRADINO application"
+          description: "Memory usage is above 90% for more than 5 minutes"
+
+      - alert: TradinoResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="tradino-app"}[5m])) > 5
+        for: 2m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "High response time on TRADINO application"
+          description: "95th percentile response time is above 5 seconds"
+
+  # ==================
+  # TRADING ALERTS
+  # ==================
+  - name: tradino-trading
+    rules:
+      - alert: TradingSystemError
+        expr: increase(trading_errors_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: critical
+          component: trading
+        annotations:
+          summary: "High trading error rate"
+          description: "More than 5 trading errors in the last 5 minutes"
+
+      - alert: ExchangeConnectionLost
+        expr: exchange_connection_status == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: exchange
+        annotations:
+          summary: "Exchange connection lost"
+          description: "Connection to {{ $labels.exchange }} is down"
+
+      - alert: PositionSizeExceeded
+        expr: current_position_size > max_position_size * 0.95
+        for: 0s
+        labels:
+          severity: warning
+          component: risk
+        annotations:
+          summary: "Position size near limit"
+          description: "Current position size is above 95% of maximum allowed"
+
+      - alert: UnrealizedLossHigh
+        expr: unrealized_pnl_percentage < -10
+        for: 5m
+        labels:
+          severity: warning
+          component: risk
+        annotations:
+          summary: "High unrealized loss detected"
+          description: "Unrealized loss is above 10% for {{ $labels.symbol }}"
+
+      - alert: RiskLimitBreached
+        expr: portfolio_risk_score > 8
+        for: 1m
+        labels:
+          severity: critical
+          component: risk
+        annotations:
+          summary: "Portfolio risk limit breached"
+          description: "Portfolio risk score is {{ $value }}, above critical threshold of 8"
+
+  # ==================
+  # AI MODEL ALERTS
+  # ==================
+  - name: tradino-ai
+    rules:
+      - alert: ModelPredictionAccuracy
+        expr: model_accuracy < 0.6
+        for: 10m
+        labels:
+          severity: warning
+          component: ai
+        annotations:
+          summary: "AI model accuracy degraded"
+          description: "Model {{ $labels.model_name }} accuracy is {{ $value }}, below 60% threshold"
+
+      - alert: ModelInferenceFailure
+        expr: increase(model_inference_errors_total[5m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+          component: ai
+        annotations:
+          summary: "AI model inference failures"
+          description: "Model {{ $labels.model_name }} has {{ $value }} inference failures in 5 minutes"
+
+      - alert: ModelTrainingStalled
+        expr: time() - last_model_training_timestamp > 86400
+        for: 0s
+        labels:
+          severity: warning
+          component: ai
+        annotations:
+          summary: "AI model training overdue"
+          description: "Model {{ $labels.model_name }} has not been retrained for over 24 hours"
+
+  # ==================
+  # INFRASTRUCTURE
+  # ==================
+  - name: tradino-infrastructure
+    rules:
+      - alert: DatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL database has been down for more than 30 seconds"
+
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: cache
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis cache has been down for more than 30 seconds"
+
+      - alert: HighDiskUsage
+        expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High disk usage"
+          description: "Disk usage is above 90% on {{ $labels.instance }}"
+
+      - alert: DatabaseConnections
+        expr: postgres_active_connections / postgres_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "High database connection usage"
+          description: "Database connection usage is above 80%"
+
+  # ==================
+  # BUSINESS METRICS
+  # ==================
+  - name: tradino-business
+    rules:
+      - alert: DailyPnLTarget
+        expr: daily_pnl_percentage < -5
+        for: 0s
+        labels:
+          severity: warning
+          component: performance
+        annotations:
+          summary: "Daily PnL below target"
+          description: "Daily PnL is {{ $value }}%, below -5% threshold"
+
+      - alert: TradingVolumeAnomaly
+        expr: |
+          (
+            trading_volume_24h - avg_over_time(trading_volume_24h[7d])
+          ) / avg_over_time(trading_volume_24h[7d]) > 2
+        for: 1h
+        labels:
+          severity: info
+          component: trading
+        annotations:
+          summary: "Unusual trading volume detected"
+          description: "24h trading volume is {{ $value }}x above 7-day average"
+
+      - alert: TelegramBotUnresponsive
+        expr: time() - last_telegram_message_timestamp > 3600
+        for: 0s
+        labels:
+          severity: warning
+          component: notifications
+        annotations:
+          summary: "Telegram bot unresponsive"
+          description: "No Telegram messages sent for over 1 hour" 
