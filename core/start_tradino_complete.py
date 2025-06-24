@@ -64,7 +64,7 @@ def start_telegram_bot():
     try:
         # Start telegram bot as subprocess
         process = subprocess.Popen([
-            'python3', 'tradino_telegram_panel.py'
+            'python3', 'core/tradino_telegram_panel.py'
         ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         time.sleep(3)  # Give it time to start
@@ -170,7 +170,7 @@ def main():
         print("🚀 AUTO-STARTING TRADING IN 5 SECONDS...")
         time.sleep(5)
         
-        trading_system.start_real_trading()
+        trading_system.start_trading()
         print("✅ TRADINO LIVE TRADING ACTIVE!")
         
         try:

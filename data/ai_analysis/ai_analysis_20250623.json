@@ -1,0 +1,84 @@
+{
+  "analyses": [
+    {
+      "individual_predictions": [
+        {
+          "model_type": "xgboost_trend",
+          "prediction": 0.72,
+          "confidence": 0.85,
+          "feature_importance": {
+            "rsi": 0.3,
+            "macd": 0.25,
+            "volume_ratio": 0.2,
+            "trend_strength": 0.15,
+            "volatility": 0.1
+          },
+          "processing_time": 15.2,
+          "accuracy_score": 0.748,
+          "timestamp": "2025-06-23T16:20:06.505113"
+        },
+        {
+          "model_type": "lightgbm_volatility",
+          "prediction": 0.68,
+          "confidence": 0.78,
+          "feature_importance": {
+            "volatility": 0.35,
+            "bollinger_position": 0.25,
+            "rsi": 0.2,
+            "volume_ratio": 0.15,
+            "macd": 0.05
+          },
+          "processing_time": 12.8,
+          "accuracy_score": 0.751,
+          "timestamp": "2025-06-23T16:20:06.505140"
+        },
+        {
+          "model_type": "random_forest_risk",
+          "prediction": 0.74,
+          "confidence": 0.82,
+          "feature_importance": {
+            "trend_strength": 0.4,
+            "rsi": 0.3,
+            "macd": 0.15,
+            "volatility": 0.1,
+            "volume_ratio": 0.05
+          },
+          "processing_time": 18.5,
+          "accuracy_score": 0.782,
+          "timestamp": "2025-06-23T16:20:06.505150"
+        }
+      ],
+      "ensemble_weights": {
+        "xgboost_trend": 0.35,
+        "lightgbm_volatility": 0.3,
+        "random_forest_risk": 0.35
+      },
+      "final_prediction": 0.71,
+      "final_confidence": 0.82,
+      "decision": "buy",
+      "agreement_score": 0.975055617421507,
+      "dominant_features": {
+        "rsi": 0.26999999999999996,
+        "trend_strength": 0.19249999999999998,
+        "volatility": 0.175,
+        "macd": 0.155,
+        "volume_ratio": 0.13249999999999998
+      },
+      "reasoning": [
+        "\ud83d\udfe2 3/3 Modelle zeigen bullische Signale",
+        "\u2705 Hohe Modell-Konfidenz: 81.7%",
+        "\ud83d\udcca Hauptfaktor: rsi (27.0% Gewichtung)",
+        "\ud83d\ude80 Kaufsignal: Positive Marktdynamik erkannt"
+      ],
+      "risk_assessment": {
+        "overall_risk": 0.1159777530313972,
+        "model_disagreement": 0.049888765156985836,
+        "confidence_risk": 0.18000000000000005,
+        "volatility_risk": 0.35000000000000003,
+        "volume_risk": 0.0,
+        "technical_risk": 0.0
+      },
+      "timestamp": "2025-06-23T16:20:06.505733"
+    }
+  ]
+}

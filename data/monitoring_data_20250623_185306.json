@@ -1,0 +1,43 @@
+{
+  "start_time": "2025-06-23T18:53:05.088559",
+  "current_time": "2025-06-23T18:53:06.135086",
+  "system_stats": [
+    {
+      "timestamp": "2025-06-23T18:53:06.090169",
+      "cpu_percent": 15.2,
+      "memory_used_gb": 1.5546340942382812,
+      "memory_percent": 49.5,
+      "disk_used_gb": 15.649311065673828,
+      "disk_percent": 42.035701685957925,
+      "network_bytes_sent": 55750468097,
+      "network_bytes_recv": 89619479838
+    }
+  ],
+  "trading_stats": [
+    {
+      "timestamp": "2025-06-23T18:53:06.130931",
+      "active_processes": 2,
+      "processes": [
+        {
+          "pid": 2981391,
+          "name": "python",
+          "cmdline": "/root/tradino/tradino_env/bin/python /root/.cursor-server/extensions/ms-python.python-2025.6.1-linux-x64/python_files/run-jedi-language-server.py"
+        },
+        {
+          "pid": 2981445,
+          "name": "python",
+          "cmdline": "/root/tradino/tradino_env/bin/python /root/.cursor-server/extensions/ms-python.python-2025.6.1-linux-x64/python_files/lib/jedilsp/jedi/inference/compiled/subprocess/__main__.py /root/.cursor-server/extensions/ms-python.python-2025.6.1-linux-x64/python_files/lib/jedilsp 3.12.3"
+        }
+      ]
+    }
+  ],
+  "performance_metrics": [
+    {
+      "timestamp": "2025-06-23T18:53:06.134120",
+      "latest_balance": null,
+      "recent_trades": 0,
+      "balance_updated": false
+    }
+  ],
+  "error_log": []
+}

@@ -8,6 +8,7 @@ import os
 import sys
 import pickle
 import json
+import time
 import numpy as np
 import pandas as pd
 from datetime import datetime
@@ -18,6 +19,16 @@ warnings.filterwarnings('ignore')
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Import AI Monitoring System
+try:
+    from ai_analysis_monitor import (
+        initialize_ai_monitoring_system, get_ai_monitoring_system,
+        ModelType, DecisionType, MarketConditions
+    )
+    AI_MONITORING_AVAILABLE = True
+except ImportError:
+    AI_MONITORING_AVAILABLE = False
+
 class TrainedModelIntegration:
     """🤖 Integration der trainierten ML Modelle"""
     
@@ -27,6 +38,21 @@ class TrainedModelIntegration:
         self.feature_pipeline = None
         self.model_info = {}
         self.is_ready = False
+        
+        # Initialize AI Monitoring System
+        if AI_MONITORING_AVAILABLE:
+            try:
+                self.ai_logger, self.ai_visualizer, self.ai_display = initialize_ai_monitoring_system()
+                print("🔍 AI Analysis Monitoring integrated")
+            except Exception as e:
+                print(f"⚠️ AI Monitoring initialization failed: {e}")
+                self.ai_logger = None
+                self.ai_visualizer = None
+                self.ai_display = None
+        else:
+            self.ai_logger = None
+            self.ai_visualizer = None
+            self.ai_display = None
         
         self.load_models()
     
@@ -116,19 +142,42 @@ class TrainedModelIntegration:
             return {'confidence': 0.0, 'direction': 'neutral', 'probability': 0.5}
         
         try:
+            start_time = time.time()
             features = self.prepare_features(market_data)
             model = self.models['xgboost_trend']
             
             # Get prediction
             prediction = model.predict(features)[0]
             probability = model.predict_proba(features)[0]
+            processing_time = (time.time() - start_time) * 1000  # milliseconds
+            
+            # Extract feature importance
+            feature_importance = {}
+            if hasattr(model, 'feature_importances_'):
+                feature_names = self.feature_pipeline['features']
+                for i, importance in enumerate(model.feature_importances_):
+                    if i < len(feature_names):
+                        feature_importance[feature_names[i]] = float(importance)
+            
+            # Log to AI monitoring system
+            if self.ai_logger:
+                self.ai_logger.log_model_prediction(
+                    ModelType.XGBOOST,
+                    float(probability[1]),  # Probability of bullish
+                    float(max(probability)),  # Confidence
+                    feature_importance,
+                    processing_time,
+                    self.model_info['xgboost_trend']['metrics']['accuracy']
+                )
             
             result = {
                 'confidence': float(max(probability)),
                 'direction': 'bullish' if prediction == 1 else 'bearish',
                 'probability': float(probability[1]),  # Probability of bullish
                 'model': 'xgboost_trend',
-                'accuracy': self.model_info['xgboost_trend']['metrics']['accuracy']
+                'accuracy': self.model_info['xgboost_trend']['metrics']['accuracy'],
+                'feature_importance': feature_importance,
+                'processing_time': processing_time
             }
             
             return result
@@ -144,19 +193,42 @@ class TrainedModelIntegration:
             return {'confidence': 0.0, 'direction': 'neutral', 'probability': 0.5}
         
         try:
+            start_time = time.time()
             features = self.prepare_features(market_data)
             model = self.models['lightgbm_volatility']
             
             # Get prediction
             prediction = model.predict(features)[0]
             probability = model.predict_proba(features)[0]
+            processing_time = (time.time() - start_time) * 1000  # milliseconds
+            
+            # Extract feature importance
+            feature_importance = {}
+            if hasattr(model, 'feature_importances_'):
+                feature_names = self.feature_pipeline['features']
+                for i, importance in enumerate(model.feature_importances_):
+                    if i < len(feature_names):
+                        feature_importance[feature_names[i]] = float(importance)
+            
+            # Log to AI monitoring system
+            if self.ai_logger:
+                self.ai_logger.log_model_prediction(
+                    ModelType.LIGHTGBM,
+                    float(probability[1]),  # Probability of bullish
+                    float(max(probability)),  # Confidence
+                    feature_importance,
+                    processing_time,
+                    self.model_info['lightgbm_volatility']['metrics']['accuracy']
+                )
             
             result = {
                 'confidence': float(max(probability)),
                 'direction': 'bullish' if prediction == 1 else 'bearish',
                 'probability': float(probability[1]),
                 'model': 'lightgbm_volatility',
-                'accuracy': self.model_info['lightgbm_volatility']['metrics']['accuracy']
+                'accuracy': self.model_info['lightgbm_volatility']['metrics']['accuracy'],
+                'feature_importance': feature_importance,
+                'processing_time': processing_time
             }
             
             return result
@@ -172,22 +244,45 @@ class TrainedModelIntegration:
             return {'risk_level': 0.5, 'confidence': 0.0}
         
         try:
+            start_time = time.time()
             features = self.prepare_features(market_data)
             model = self.models['random_forest_risk']
             
             # Get prediction
             prediction = model.predict(features)[0]
             probability = model.predict_proba(features)[0]
+            processing_time = (time.time() - start_time) * 1000  # milliseconds
+            
+            # Extract feature importance
+            feature_importance = {}
+            if hasattr(model, 'feature_importances_'):
+                feature_names = self.feature_pipeline['features']
+                for i, importance in enumerate(model.feature_importances_):
+                    if i < len(feature_names):
+                        feature_importance[feature_names[i]] = float(importance)
             
             # Risk level: 0 = low risk (bearish), 1 = high risk (bullish)
             risk_level = float(probability[1])  # Probability of bullish (higher risk)
+            
+            # Log to AI monitoring system
+            if self.ai_logger:
+                self.ai_logger.log_model_prediction(
+                    ModelType.RANDOM_FOREST,
+                    float(probability[1]),  # Probability of bullish
+                    float(max(probability)),  # Confidence
+                    feature_importance,
+                    processing_time,
+                    self.model_info['random_forest_risk']['metrics']['accuracy']
+                )
             
             result = {
                 'risk_level': risk_level,
                 'confidence': float(max(probability)),
                 'direction': 'bullish' if prediction == 1 else 'bearish',
                 'model': 'random_forest_risk',
-                'accuracy': self.model_info['random_forest_risk']['metrics']['accuracy']
+                'accuracy': self.model_info['random_forest_risk']['metrics']['accuracy'],
+                'feature_importance': feature_importance,
+                'processing_time': processing_time
             }
             
             return result
@@ -286,6 +381,100 @@ class TrainedModelIntegration:
         # Position sizing based on confidence
         position_size = min(1.0, ensemble['confidence'] * ensemble['ensemble_strength'])
         
+        # Create comprehensive market conditions for AI monitoring
+        if self.ai_logger and len(market_data) > 0:
+            try:
+                latest_data = market_data.iloc[-1]
+                
+                # Calculate additional market indicators
+                volatility = market_data['Close'].pct_change().rolling(20).std().iloc[-1] if len(market_data) >= 20 else 0.02
+                trend_strength = abs(market_data['Close'].pct_change(5).iloc[-1]) if len(market_data) >= 5 else 0.01
+                
+                # Create market conditions object
+                market_conditions = MarketConditions(
+                    symbol="BTC/USDT",  # Default, could be parameterized
+                    price=float(latest_data['Close']),
+                    volume=float(latest_data['Volume']),
+                    volatility=float(volatility) if not np.isnan(volatility) else 0.02,
+                    trend_strength=float(trend_strength) if not np.isnan(trend_strength) else 0.01,
+                    support_level=float(market_data['Low'].rolling(20).min().iloc[-1]) if len(market_data) >= 20 else float(latest_data['Low']),
+                    resistance_level=float(market_data['High'].rolling(20).max().iloc[-1]) if len(market_data) >= 20 else float(latest_data['High']),
+                    rsi=self._calculate_rsi(market_data),
+                    macd=self._calculate_macd(market_data),
+                    bollinger_position=self._calculate_bollinger_position(market_data),
+                    timestamp=datetime.now().isoformat()
+                )
+                
+                # Collect individual model predictions for ensemble analysis
+                individual_predictions = []
+                
+                # Get detailed predictions from each model
+                trend_pred = self.get_trend_prediction(market_data)
+                if trend_pred.get('feature_importance'):
+                    from ai_analysis_monitor import ModelPrediction
+                    individual_predictions.append(ModelPrediction(
+                        model_type=ModelType.XGBOOST,
+                        prediction=trend_pred['probability'],
+                        confidence=trend_pred['confidence'],
+                        feature_importance=trend_pred['feature_importance'],
+                        processing_time=trend_pred.get('processing_time', 0.0),
+                        accuracy_score=trend_pred['accuracy'],
+                        timestamp=datetime.now().isoformat()
+                    ))
+                
+                vol_pred = self.get_volatility_prediction(market_data)
+                if vol_pred.get('feature_importance'):
+                    individual_predictions.append(ModelPrediction(
+                        model_type=ModelType.LIGHTGBM,
+                        prediction=vol_pred['probability'],
+                        confidence=vol_pred['confidence'],
+                        feature_importance=vol_pred['feature_importance'],
+                        processing_time=vol_pred.get('processing_time', 0.0),
+                        accuracy_score=vol_pred['accuracy'],
+                        timestamp=datetime.now().isoformat()
+                    ))
+                
+                risk_pred = self.get_risk_assessment(market_data)
+                if risk_pred.get('feature_importance'):
+                    individual_predictions.append(ModelPrediction(
+                        model_type=ModelType.RANDOM_FOREST,
+                        prediction=risk_pred.get('probability', risk_pred['risk_level']),
+                        confidence=risk_pred['confidence'],
+                        feature_importance=risk_pred['feature_importance'],
+                        processing_time=risk_pred.get('processing_time', 0.0),
+                        accuracy_score=risk_pred['accuracy'],
+                        timestamp=datetime.now().isoformat()
+                    ))
+                
+                # Determine ensemble weights
+                ensemble_weights = {
+                    'xgboost_trend': 0.35,
+                    'lightgbm_volatility': 0.30,
+                    'random_forest_risk': 0.35
+                }
+                
+                # Map action to decision type
+                decision_map = {
+                    'buy': DecisionType.BUY,
+                    'sell': DecisionType.SELL,
+                    'hold': DecisionType.HOLD
+                }
+                decision = decision_map.get(action, DecisionType.NEUTRAL)
+                
+                # Log complete ensemble analysis
+                if individual_predictions:
+                    self.ai_logger.log_ensemble_analysis(
+                        individual_predictions=individual_predictions,
+                        ensemble_weights=ensemble_weights,
+                        final_prediction=ensemble['probability'],
+                        final_confidence=ensemble['confidence'],
+                        decision=decision,
+                        market_conditions=market_conditions
+                    )
+                    
+            except Exception as e:
+                print(f"⚠️ AI monitoring logging error: {e}")
+        
         result = {
             'action': action,
             'direction': ensemble['direction'],
@@ -300,6 +489,151 @@ class TrainedModelIntegration:
         }
         
         return result
+    
+    def _calculate_rsi(self, market_data: pd.DataFrame, period: int = 14) -> float:
+        """📊 Calculate RSI"""
+        try:
+            if len(market_data) < period + 1:
+                return 50.0  # Neutral RSI
+            
+            delta = market_data['Close'].diff()
+            gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+            
+            rs = gain / loss
+            rsi = 100 - (100 / (1 + rs))
+            
+            return float(rsi.iloc[-1]) if not np.isnan(rsi.iloc[-1]) else 50.0
+        except:
+            return 50.0
+    
+    def _calculate_macd(self, market_data: pd.DataFrame, fast: int = 12, slow: int = 26) -> float:
+        """📊 Calculate MACD"""
+        try:
+            if len(market_data) < slow:
+                return 0.0
+            
+            exp1 = market_data['Close'].ewm(span=fast).mean()
+            exp2 = market_data['Close'].ewm(span=slow).mean()
+            macd = exp1 - exp2
+            
+            return float(macd.iloc[-1]) if not np.isnan(macd.iloc[-1]) else 0.0
+        except:
+            return 0.0
+    
+    def _calculate_bollinger_position(self, market_data: pd.DataFrame, period: int = 20) -> float:
+        """📊 Calculate Bollinger Band Position"""
+        try:
+            if len(market_data) < period:
+                return 0.5  # Middle position
+            
+            sma = market_data['Close'].rolling(window=period).mean()
+            std = market_data['Close'].rolling(window=period).std()
+            
+            upper_band = sma + (2 * std)
+            lower_band = sma - (2 * std)
+            
+            current_price = market_data['Close'].iloc[-1]
+            bb_position = (current_price - lower_band.iloc[-1]) / (upper_band.iloc[-1] - lower_band.iloc[-1])
+            
+            return float(bb_position) if not np.isnan(bb_position) else 0.5
+        except:
+            return 0.5
+    
+    def get_ai_analysis_report(self) -> Optional[str]:
+        """📊 Get latest AI analysis report"""
+        if not self.ai_visualizer:
+            return None
+        
+        try:
+            recent_analyses = self.ai_logger.get_recent_analyses(1)
+            if not recent_analyses:
+                return "📊 Keine AI-Analysen verfügbar"
+            
+            latest_analysis = recent_analyses[0]
+            
+            # Mock market conditions for report
+            mock_conditions = MarketConditions(
+                symbol="BTC/USDT",
+                price=45000.0,
+                volume=1000000,
+                volatility=0.03,
+                trend_strength=0.5,
+                support_level=44000.0,
+                resistance_level=46000.0,
+                rsi=50.0,
+                macd=0.0,
+                bollinger_position=0.5,
+                timestamp=datetime.now().isoformat()
+            )
+            
+            return self.ai_visualizer.generate_text_report(latest_analysis, mock_conditions)
+        except Exception as e:
+            return f"❌ Fehler beim Generieren des Reports: {e}"
+    
+    def get_ai_dashboard_data(self) -> Optional[Dict[str, Any]]:
+        """📊 Get AI dashboard data"""
+        if not self.ai_visualizer:
+            return None
+        
+        try:
+            return self.ai_visualizer.generate_dashboard_summary()
+        except Exception as e:
+            print(f"❌ Dashboard data error: {e}")
+            return None
+    
+    def start_ai_monitoring(self, interval: int = 60):
+        """🔄 Start AI monitoring display"""
+        if self.ai_display:
+            self.ai_display.start_monitoring(interval)
+            print(f"🔄 AI monitoring started (interval: {interval}s)")
+        else:
+            print("⚠️ AI monitoring not available")
+    
+    def stop_ai_monitoring(self):
+        """🛑 Stop AI monitoring"""
+        if self.ai_display:
+            self.ai_display.stop_monitoring()
+            print("🛑 AI monitoring stopped")
+    
+    def export_ai_analysis_for_telegram(self) -> Optional[Dict[str, Any]]:
+        """📱 Export AI analysis data for Telegram bot"""
+        if not self.ai_logger:
+            return None
+        
+        try:
+            dashboard = self.get_ai_dashboard_data()
+            recent_analyses = self.ai_logger.get_recent_analyses(3)
+            
+            if not dashboard or not recent_analyses:
+                return None
+            
+            # Format for Telegram
+            telegram_data = {
+                'summary': {
+                    'total_analyses': dashboard.get('total_analyses', 0),
+                    'avg_confidence': dashboard.get('avg_confidence', 0.0),
+                    'avg_agreement': dashboard.get('avg_agreement', 0.0),
+                    'confidence_trend': dashboard.get('confidence_trend', 'unknown')
+                },
+                'latest_decision': {
+                    'action': recent_analyses[0].decision.value if recent_analyses else 'unknown',
+                    'confidence': recent_analyses[0].final_confidence if recent_analyses else 0.0,
+                    'agreement': recent_analyses[0].agreement_score if recent_analyses else 0.0,
+                    'timestamp': recent_analyses[0].timestamp if recent_analyses else '',
+                    'top_feature': max(recent_analyses[0].dominant_features.items(), 
+                                     key=lambda x: x[1])[0] if recent_analyses and recent_analyses[0].dominant_features else 'unknown'
+                },
+                'model_performance': dashboard.get('performance', {}).get('models', {}),
+                'top_features': dashboard.get('top_features', {}),
+                'recent_decisions': dashboard.get('recent_decisions', {})
+            }
+            
+            return telegram_data
+            
+        except Exception as e:
+            print(f"❌ Telegram export error: {e}")
+            return None
     
     def get_model_status(self) -> Dict[str, Any]:
         """📊 Get status of all models"""
